@@ -1,0 +1,62 @@
+version: '3.7'
+
+services:
+  app:
+    image: laravel/horizon
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/var/www/html
+    ports:
+      - 80:80
+    depends_on:
+      - database
+      - redis
+      - worker
+
+  worker:
+    image: laravel/horizon
+    entrypoint: "php artisan horizon"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - database
+      - redis
+
+  artisan:
+    image: laravel/horizon
+    user: "1000:1000"
+    entrypoint: "php artisan"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+      - ./setup/horizon.ini:/usr/local/etc/php/conf.d/docker-php-horizon.ini
+
+  database:
+    image: mysql:8.0
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: hoirzon
+      MYSQL_USER: hoirzon
+      MYSQL_PASSWORD: hoirzon
+      MYSQL_ROOT_PASSWORD: hoirzon
+
+  redis:
+    image: bitnami/redis:4.0
+    ports:
+      - "6379:6379"
+    environment:
+      ALLOW_EMPTY_PASSWORD: 'yes'
+
+volumes:
+  db-data:
+    driver: local
